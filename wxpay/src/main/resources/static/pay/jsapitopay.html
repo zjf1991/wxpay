@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<input type="button" value="去付款" onclick="pay()">
+</body>
+<script src="../js/libs/jquery-1.8.3.min.js"></script>
+<script src="http://pv.sohu.com/cityjson?ie=utf-8"></script>
+
+<script>
+    //获取连接上的参数code
+    function getQueryString(name){
+        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+        var r = window.location.search.substr(1).match(reg);
+        if (r != null) return unescape(r[2]); return null;
+    }
+    var code = getQueryString("code");
+
+    function pay() {
+        console.log("进来了");
+        var cip=returnCitySN["cip"];
+        var url ="/pay/wx/jsapipay/satrt";
+        var baseURL="http://appapi.allonhome.com:8099";
+        var data={"code":code,"cip":cip,"orderid":"ea19d293-d4d9-42ab-8722-67af449d1371"};
+        $.ajax({
+            type: "POST",
+            url: baseURL + url,
+            contentType: "application/json",
+            data: JSON.stringify(data),
+            success: function (r) {
+                if (r.ret === 0) {
+                    var appId=r.data.appId;
+                    var timeStamp=r.data.timeStamp;
+                    var nonceStr=r.data.nonceStr;
+                    var rpackage=r.data.package;
+                    var signType=r.data.signType;
+                    var paySign=r.data.paySign;
+                    onBridgeReady();
+                    function onBridgeReady(){
+                        WeixinJSBridge.invoke(
+                            'getBrandWCPayRequest', {
+                                "appId":appId,     //公众号名称，由商户传入
+                                "timeStamp":timeStamp,         //时间戳，自1970年以来的秒数
+                                "nonceStr":nonceStr, //随机串
+                                "package":rpackage,
+                                "signType":signType,         //微信签名方式：
+                                "paySign":paySign //微信签名
+                            },
+                            function(res){
+                                if(res.err_msg == "get_brand_wcpay_request:ok" ) {
+
+                                }else if(res.err_msg == "get_brand_wcpay_request:cancel" ) {
+
+                                }
+                            });
+                    }
+                    if (typeof WeixinJSBridge == "undefined"){
+                        if( document.addEventListener ){
+                            document.addEventListener('WeixinJSBridgeReady', onBridgeReady, false);
+                        }else if (document.attachEvent){
+                            document.attachEvent('WeixinJSBridgeReady', onBridgeReady);
+                            document.attachEvent('onWeixinJSBridgeReady', onBridgeReady);
+                        }
+                    }else{
+                        onBridgeReady();
+                    }
+                } else {
+                    alert(r.msg);
+                }
+            }
+        });
+    }
+</script>
+</html>

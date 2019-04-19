@@ -18,8 +18,13 @@ import java.io.InputStreamReader;
 import java.security.KeyStore;
 
 public class WXpayConfig {
+
+
     //appid
     public  static  final  String APPID="wx68491b7083e86211";
+    //服务号appid
+    public  static  final  String SERVERAPPID="wx0b314a9ba53bcfc4";
+    public  static  final  String SERVERsecret="26f07a05ea237ac8a180342e6bf4bbf7";
     //证书
     public  static  final  String MchID="1493793662";
     //key
@@ -32,7 +37,7 @@ public class WXpayConfig {
     public  static  final  String apiclient_cert_FORMAL="/mnt/yzjtest/apiclient_cert.p12";
     public  static  final  String apiclient_cert_TEST="F:\\mnt\\apiclient_cert.p12";
     //回调接口
-    public  static final String FORMALSERVERADDRESS="http://test.yuanzijia.com:8066";
+    public  static final String FORMALSERVERADDRESS="http://x6z62u.natappfree.cc";
 
 
 

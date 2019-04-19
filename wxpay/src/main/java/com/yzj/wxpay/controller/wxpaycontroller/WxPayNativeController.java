@@ -1,13 +1,11 @@
 package com.yzj.wxpay.controller.wxpaycontroller;
 
-
 import com.github.wxpay.sdk.WXPay;
 import com.github.wxpay.sdk.WXPayUtil;
-import com.yzj.wxpay.utils.RetJson;
+import com.yzj.wxpay.utils.QRcode;
 import com.yzj.wxpay.utils.wxpay.HttpClientUtil;
 import com.yzj.wxpay.utils.wxpay.WXPayConfigImpl;
 import com.yzj.wxpay.utils.wxpay.WXpayConfig;
-import org.json.JSONObject;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -18,33 +16,26 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
 
+
 /**
- * 微信H5支付
+ * 微信扫码支付
  */
-
 @RestController
-public class WxH5PayController {
+public class WxPayNativeController {
 
-    /**
-     * H5支付
-     * @param response
-     * @param paload
-     * @return
-     */
-    @RequestMapping("/pay/wx/h5pay/satrt")
-    public RetJson getCode(HttpServletResponse response,@RequestBody Map<String,Object> paload){
-        RetJson retJson=new RetJson();
+
+    @RequestMapping("/loan/genarateQRcode")
+    public String getCode(HttpServletRequest request, HttpServletResponse response, @RequestBody Map<String,Object> paload){
         try {
-          /*  String out_trade_no=paload.get("out_trade_no").toString();*/
-            /*String rechargeMoney=paload.get("rechargeMoney").toString();*/
-            String out_trade_no=WXPayUtil.generateNonceStr();
-            String rechargeMoney="0.01";
-            String cip=paload.get("cip").toString();
-            String body="智能锁支付";
+            String out_trade_no=paload.get("out_trade_no").toString();
+            String rechargeMoney=paload.get("rechargeMoney").toString();
+            String body=paload.get("body").toString();
             //调用统一下单接口
             HashMap<String, String> data = new HashMap<String, String>();
             data.put("body", body);
@@ -59,55 +50,38 @@ public class WxH5PayController {
             String m = rechargeMoney;
             m = df.format((Double.valueOf(m)* 100));
             data.put("total_fee", String.valueOf(new Double(m).intValue()));
-            System.out.println(cip);
-            data.put("spbill_create_ip", cip);
-            data.put("notify_url", WXpayConfig.FORMALSERVERADDRESS+"/app/api/wx/h5/notify");
-            data.put("trade_type", "MWEB ");
+            InetAddress inetAddress=InetAddress.getLocalHost();
+            data.put("spbill_create_ip", inetAddress.getHostAddress());
+            data.put("notify_url", WXpayConfig.FORMALSERVERADDRESS+"/app/api/wx/notify");
+            data.put("trade_type", "NATIVE ");
             data.put("product_id", out_trade_no);
-            HashMap<String, Object> scene_info = new HashMap<String, Object>();
-            HashMap<String, String> h5_info = new HashMap<String, String>();
-            h5_info.put("type","Wap");
-            h5_info.put("wap_url","https://pay.qq.com");
-            h5_info.put("wap_name","腾讯充值");
-            scene_info.put("h5_info",h5_info);
-            JSONObject jsonObject=new JSONObject(scene_info);
-            data.put("scene_info",jsonObject.toString());
             //签名
-            String sign=  WXPayUtil.generateSignature(data,WXpayConfig.Key);
+             String sign=  WXPayUtil.generateSignature(data,WXpayConfig.Key);
             data.put("sign", sign);
             //将类型为map的参数转换为xml
             String requestxml= WXPayUtil.mapToXml(data);
             String responseDataXml=  HttpClientUtil.doPostByXml(WXpayConfig.UNIFIEDORDER_URL_SUFFIX,requestxml);
             //将响应值转换成map
             Map<String, String> responseDataMap=  WXPayUtil.xmlToMap(responseDataXml);
-            String return_code =responseDataMap.get("return_code");
-            if(return_code.equals("SUCCESS")){
-                String result_code =responseDataMap.get("result_code");
-                if(result_code.equals("SUCCESS")){
-                    String mweb_url =responseDataMap.get("mweb_url");
-                    retJson.ret=0;
-                    retJson.msg="success";
-                    retJson.data=mweb_url;
-                   /* response.sendRedirect(mweb_url);*/
-                    return retJson;
-                }else {
-                    String err_code_des =responseDataMap.get("err_code_des");
-                    retJson.ret=1;
-                    retJson.msg="fail";
-                    retJson.data=err_code_des;
-                    return  retJson;
-                }
-            }else {
-                retJson.ret=1;
-                retJson.msg="fail";
-                return  retJson;
-            }
+           String return_code =responseDataMap.get("return_code");
+           if(return_code.equals("SUCCESS")){
+               String result_code =responseDataMap.get("result_code");
+               if(result_code.equals("SUCCESS")){
+                   String code_url =responseDataMap.get("code_url");
+                   //将code_url生成二维码即可扫码支付
+                   QRcode.getQRcode(code_url,response);
+                   return code_url;
+               }else {
+                   String err_code_des =responseDataMap.get("err_code_des");
+                   return  err_code_des;
+               }
+           }else {
+               return  "通信失败！";
+           }
+            //获取到code_url,生成二维码
         }  catch (Exception e){
-            e.printStackTrace();
-            retJson.ret=1;
-            retJson.msg="fail";
-            retJson.data=e;
-            return  retJson;
+                 e.printStackTrace();
+            return "获取失败！";
         }
     }
 
@@ -119,10 +93,10 @@ public class WxH5PayController {
      * @return
      * @throws Exception
      * @throws
-     * @throws
+     * @throws UnsupportedEncodingException
      */
     @SuppressWarnings("unchecked")
-    @RequestMapping(value = "/app/api/wx/h5/notify", method = RequestMethod.POST)
+    @RequestMapping(value = "/app/api/wx/notify", method = RequestMethod.POST)
     public void getnotify(HttpServletRequest request,
                           HttpServletResponse response) throws Exception {
 
@@ -170,25 +144,25 @@ public class WxH5PayController {
                             + "<return_code><![CDATA[FAIL]]></return_code>"
                             + "<return_msg><![CDATA[报文为空]]></return_msg>"
                             + "</xml> ";
-                    System.err.println(map.get("err_code") + ":"
+                            System.err.println(map.get("err_code") + ":"
                             + map.get("err_code_des"));
                 }
             } else {
                 System.out.println("通信失败！");
-                resXml = "<xml>"
+                     resXml = "<xml>"
                         + "<return_code><![CDATA[FAIL]]></return_code>"
                         + "<return_msg><![CDATA[报文为空]]></return_msg>"
                         + "</xml> ";
 
+                }
             }
+            // 处理业务完毕
+            // ------------------------------
+            BufferedOutputStream out = new BufferedOutputStream(
+                    response.getOutputStream());
+            out.write(resXml.getBytes());
+            out.flush();
+            out.close();
         }
-        // 处理业务完毕
-        // ------------------------------
-        BufferedOutputStream out = new BufferedOutputStream(
-                response.getOutputStream());
-        out.write(resXml.getBytes());
-        out.flush();
-        out.close();
     }
 
-}

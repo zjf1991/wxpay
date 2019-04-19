@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+       <input type="button" value="H5付款" onclick="pay()">
+</body>
+<script src="../js/libs/jquery-1.8.3.min.js"></script>
+<script src="http://pv.sohu.com/cityjson?ie=utf-8"></script>
+
+<script>
+    function pay() {
+        console.log("进来了");
+        var cip=returnCitySN["cip"];
+        var cname=returnCitySN["cname"];
+        var url ="/pay/wx/h5pay/satrt";
+        var baseURL="http://appapi.allonhome.com:8099";
+        var data={"cip":cip,"orderid":"ea19d293-d4d9-42ab-8722-67af449d1371"};
+        $.ajax({
+            type: "POST",
+            url: baseURL + url,
+            contentType: "application/json",
+            data: JSON.stringify(data),
+            success: function (r) {
+                if (r.ret === 0) {
+                    var web_url=r.data;
+                    window.location.href = web_url;
+                } else {
+                    alert(r.msg);
+                }
+            }
+        });
+    }
+</script>
+</html>

@@ -113,12 +113,11 @@ public class ServerYanzheng {
      */
     @GetMapping("/app/yzj/wx/authorize/getcode")
     public Object shouquan(HttpServletRequest request, HttpServletResponse response){
-
         try {
             //获取code
             String code =request.getParameter("code");
-            String appid="wx5a5442e966841816";
-            String secret="d2550a1b854f1b9994f722126d9890af";
+            String appid="wx0b314a9ba53bcfc4";
+            String secret="26f07a05ea237ac8a180342e6bf4bbf7";
             //用code换取token
             String result=MessageUtil.getAccess_token(appid,secret,code);
             JSONObject object=new JSONObject(result);

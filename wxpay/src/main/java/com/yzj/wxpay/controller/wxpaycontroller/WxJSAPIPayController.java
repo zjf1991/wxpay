@@ -4,6 +4,7 @@ package com.yzj.wxpay.controller.wxpaycontroller;
 import com.github.wxpay.sdk.WXPay;
 import com.github.wxpay.sdk.WXPayUtil;
 import com.yzj.wxpay.utils.RetJson;
+import com.yzj.wxpay.utils.wxgongzhonghao.MessageUtil;
 import com.yzj.wxpay.utils.wxpay.HttpClientUtil;
 import com.yzj.wxpay.utils.wxpay.WXPayConfigImpl;
 import com.yzj.wxpay.utils.wxpay.WXpayConfig;
@@ -19,39 +20,44 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.text.DecimalFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 微信H5支付
+ * 公众号支付
  */
-
 @RestController
-public class WxH5PayController {
+public class WxJSAPIPayController {
 
     /**
-     * H5支付
-     * @param response
-     * @param paload
+     * 统一下单
+     * @param
+     * @param
      * @return
      */
-    @RequestMapping("/pay/wx/h5pay/satrt")
-    public RetJson getCode(HttpServletResponse response,@RequestBody Map<String,Object> paload){
+    @RequestMapping("/pay/wx/jsapipay/satrt")
+    public RetJson getCode(HttpServletRequest request,@RequestBody Map<String,Object> paload){
         RetJson retJson=new RetJson();
         try {
-          /*  String out_trade_no=paload.get("out_trade_no").toString();*/
+            /*  String out_trade_no=paload.get("out_trade_no").toString();*/
             /*String rechargeMoney=paload.get("rechargeMoney").toString();*/
             String out_trade_no=WXPayUtil.generateNonceStr();
             String rechargeMoney="0.01";
             String cip=paload.get("cip").toString();
-            String body="智能锁支付";
+            String body="56656";
+            String code=paload.get("code").toString();
+            String openid= getOpenid(code);
+            System.out.println(openid);
             //调用统一下单接口
             HashMap<String, String> data = new HashMap<String, String>();
-            data.put("body", body);
+
+            HashMap<String, String> redata = new HashMap<>();
             data.put("out_trade_no", out_trade_no);
-            data.put("appid",WXpayConfig.APPID);
+            data.put("appid",WXpayConfig.SERVERAPPID);
             data.put("mch_id",WXpayConfig.MchID);
             data.put("nonce_str",WXPayUtil.generateNonceStr());
+            data.put("body", body);
             data.put("device_info", "WEB");
             data.put("fee_type", "CNY");
 
@@ -59,19 +65,12 @@ public class WxH5PayController {
             String m = rechargeMoney;
             m = df.format((Double.valueOf(m)* 100));
             data.put("total_fee", String.valueOf(new Double(m).intValue()));
-            System.out.println(cip);
+
             data.put("spbill_create_ip", cip);
-            data.put("notify_url", WXpayConfig.FORMALSERVERADDRESS+"/app/api/wx/h5/notify");
-            data.put("trade_type", "MWEB ");
+            data.put("notify_url", WXpayConfig.FORMALSERVERADDRESS+"/app/api/wx/jsapipay/notify");
+            data.put("trade_type", "JSAPI ");
             data.put("product_id", out_trade_no);
-            HashMap<String, Object> scene_info = new HashMap<String, Object>();
-            HashMap<String, String> h5_info = new HashMap<String, String>();
-            h5_info.put("type","Wap");
-            h5_info.put("wap_url","https://pay.qq.com");
-            h5_info.put("wap_name","腾讯充值");
-            scene_info.put("h5_info",h5_info);
-            JSONObject jsonObject=new JSONObject(scene_info);
-            data.put("scene_info",jsonObject.toString());
+            data.put("openid", openid);
             //签名
             String sign=  WXPayUtil.generateSignature(data,WXpayConfig.Key);
             data.put("sign", sign);
@@ -84,11 +83,22 @@ public class WxH5PayController {
             if(return_code.equals("SUCCESS")){
                 String result_code =responseDataMap.get("result_code");
                 if(result_code.equals("SUCCESS")){
-                    String mweb_url =responseDataMap.get("mweb_url");
+                    String appId =responseDataMap.get("appid");
+                    long timeStamp =new Date().getTime();
+                    String nonceStr =responseDataMap.get("nonce_str");
+                    String repackage="prepay_id="+responseDataMap.get("prepay_id");
+                    String signType ="MD5";
+                    redata.put("appId",appId);
+                    redata.put("timeStamp",String.valueOf(timeStamp));
+                    redata.put("nonceStr",nonceStr);
+                    redata.put("package",repackage);
+                    redata.put("signType",signType);
+                    //签名
+                    String paySign=  WXPayUtil.generateSignature(redata,WXpayConfig.Key);
+                    redata.put("paySign",paySign);
                     retJson.ret=0;
                     retJson.msg="success";
-                    retJson.data=mweb_url;
-                   /* response.sendRedirect(mweb_url);*/
+                    retJson.data=redata;
                     return retJson;
                 }else {
                     String err_code_des =responseDataMap.get("err_code_des");
@@ -112,6 +122,29 @@ public class WxH5PayController {
     }
 
     /**
+     * 微信网页授权登录
+     * @param
+     * @param
+     * @return
+     */
+    public String getOpenid(String code){
+
+        try {
+            //获取code
+            String appid=WXpayConfig.SERVERAPPID;
+            String secret=WXpayConfig.SERVERsecret;
+            //用code换取token
+            String result=MessageUtil.getAccess_token(appid,secret,code);
+            JSONObject object=new JSONObject(result);
+            String openid=object.get("openid").toString();
+            return openid;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+    /**
      * 处理微信支付结果通知
      *
      * @param
@@ -122,7 +155,7 @@ public class WxH5PayController {
      * @throws
      */
     @SuppressWarnings("unchecked")
-    @RequestMapping(value = "/app/api/wx/h5/notify", method = RequestMethod.POST)
+    @RequestMapping(value = "/app/api/wx/jsapipay/notify", method = RequestMethod.POST)
     public void getnotify(HttpServletRequest request,
                           HttpServletResponse response) throws Exception {
 
@@ -190,5 +223,4 @@ public class WxH5PayController {
         out.flush();
         out.close();
     }
-
 }
