@@ -53,7 +53,7 @@ public class QRcode {
             //创建一个矩阵对象
             BitMatrix bitMatrix=new MultiFormatWriter().encode(url,BarcodeFormat.QR_CODE,width,height,hintTypeObjectMap);
             BufferedImage image = MatrixToImageWriter.toBufferedImage(bitMatrix);
-            //输出
+            //输出到流
             outPic(image,response);
 
         }catch (Exception e){
@@ -82,7 +82,7 @@ public class QRcode {
             BufferedImage image = MatrixToImageWriter.toBufferedImage(bitMatrix);
             //在生成的二维码中插入图片
             insertImage(image,imgPath,needCompress);
-            //输出
+            //输出到流
             outPic(image,response);
         }catch (Exception e){
 
@@ -132,7 +132,7 @@ public class QRcode {
     }
 
     /**
-     * 输出流
+     * 输出到流
      * @param
      * @return
      */
@@ -142,6 +142,24 @@ public class QRcode {
             ImageIO.write(image, "jpg", out);
             out.flush();
             IOUtils.closeQuietly(out);
+        }catch (Exception e){
+
+        }
+    }
+
+    /**
+     * 输出到文件
+     * @param
+     * @return
+     */
+    private static void outToFile(BufferedImage image, String outPath,String fileName){
+        try {
+            File file=new File(outPath);
+            if(!file.exists()){
+                file.mkdirs();
+            }
+            file=new File(outPath+File.separator+fileName);
+            ImageIO.write(image, "jpg", file);
         }catch (Exception e){
 
         }
