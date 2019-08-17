@@ -31,15 +31,15 @@ public class WXPayConfigImpl implements WXPayConfig {
 	}
 
 	public String getAppID() {
-		return "wx68491b7083e86211";
+		return "sdagasdfgagasdgad";
 	}
 
 	public String getMchID() {
-		return "1493793662";
+		return "adfhdafhdsfhdsfh";
 	}
 
 	public String getKey() {
-		return "YZJ20171200611335524424488888888";
+		return "dafhdafhadfhadfhdafhadfh";
 	}
 
 	public InputStream getCertStream() {

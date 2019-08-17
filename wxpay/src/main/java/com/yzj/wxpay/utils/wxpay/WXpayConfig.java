@@ -21,21 +21,21 @@ public class WXpayConfig {
 
 
     //appid
-    public  static  final  String APPID="wx68491b7083e86211";
+    public  static  final  String APPID="fgsdfghdgdefhsrtfhsdfhdfhdfh";
     //服务号appid
-    public  static  final  String SERVERAPPID="wx0b314a9ba53bcfc4";
-    public  static  final  String SERVERsecret="26f07a05ea237ac8a180342e6bf4bbf7";
+    public  static  final  String SERVERAPPID="asgawsgwagwaegw";
+    public  static  final  String SERVERsecret="wegwegwegwegwegw";
     //证书
-    public  static  final  String MchID="1493793662";
+    public  static  final  String MchID="agawsgsagsadgsad";
     //key
-    public  static  final  String Key="YZJ20171200611335524424488888888";
+    public  static  final  String Key="sagdgsadgssdgsdgsadgsd";
     //统一下单接口
     public  static  final  String UNIFIEDORDER_URL_SUFFIX="https://api.mch.weixin.qq.com/pay/unifiedorder";
     //退款接口
     public  static  final  String REFUND_URL="https://api.mch.weixin.qq.com/secapi/pay/refund";
     //证书地址
-    public  static  final  String apiclient_cert_FORMAL="/mnt/yzjtest/apiclient_cert.p12";
-    public  static  final  String apiclient_cert_TEST="F:\\mnt\\apiclient_cert.p12";
+    public  static  final  String apiclient_cert_FORMAL="isjdhgijsdbhigjsdbigvbsidbgvisnbvisn";
+    public  static  final  String apiclient_cert_TEST="gsadfghafghasdfhgshbdgihsdg";
     //回调接口
     public  static final String FORMALSERVERADDRESS="http://x6z62u.natappfree.cc";
 
